@@ -183,21 +183,74 @@
   <div class="tab-panel" id="panel-2">
     <div class="controls">
       <div class="control-group">
-        <label>Methylphenidate 劑型</label>
-        <select id="combo-mph" onchange="updateChart2()">
+        <label>短效型 (mg)</label>
+        <select id="combo-mph-ir" onchange="updateChart2()">
           <option value="0">不使用</option>
-          <option value="1" selected>Concerta 36mg</option>
-          <option value="2">Ritalin LA 20mg</option>
-          <option value="3">Methydur 33mg</option>
-          <option value="4">短效 10mg BID</option>
+          <option value="5">5 mg</option>
+          <option value="10" selected>10 mg</option>
+          <option value="15">15 mg</option>
+          <option value="20">20 mg</option>
         </select>
       </div>
       <div class="control-group">
-        <label>非刺激劑</label>
-        <select id="combo-nonstim" onchange="updateChart2()">
+        <label>Ritalin LA (mg)</label>
+        <select id="combo-ritalin-la" onchange="updateChart2()">
           <option value="0">不使用</option>
-          <option value="1" selected>Bupropion XL 300mg</option>
-          <option value="2">Atomoxetine 60mg</option>
+          <option value="10">10 mg</option>
+          <option value="20">20 mg</option>
+          <option value="30" selected>30 mg</option>
+          <option value="40">40 mg</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Methydur (mg)</label>
+        <select id="combo-methydur" onchange="updateChart2()">
+          <option value="0">不使用</option>
+          <option value="22">22 mg</option>
+          <option value="33" selected>33 mg</option>
+          <option value="44">44 mg</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Concerta (mg)</label>
+        <select id="combo-concerta" onchange="updateChart2()">
+          <option value="0">不使用</option>
+          <option value="18">18 mg</option>
+          <option value="27">27 mg</option>
+          <option value="36">36 mg</option>
+          <option value="54">54 mg</option>
+        </select>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="control-group">
+        <label>Bupropion SR (mg)</label>
+        <select id="combo-bup-sr" onchange="updateChart2()">
+          <option value="0">不使用</option>
+          <option value="100">100 mg</option>
+          <option value="150">150 mg</option>
+          <option value="200">200 mg</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Bupropion XL (mg)</label>
+        <select id="combo-bup-xl" onchange="updateChart2()">
+          <option value="0">不使用</option>
+          <option value="150">150 mg</option>
+          <option value="300" selected>300 mg</option>
+          <option value="450">450 mg</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Atomoxetine (mg)</label>
+        <select id="combo-atom" onchange="updateChart2()">
+          <option value="0">不使用</option>
+          <option value="18">18 mg</option>
+          <option value="25">25 mg</option>
+          <option value="40">40 mg</option>
+          <option value="60" selected>60 mg</option>
+          <option value="80">80 mg</option>
+          <option value="100">100 mg</option>
         </select>
       </div>
     </div>
@@ -492,54 +545,96 @@ function updateChart1() {
 }
 
 function updateChart2() {
-  const mphChoice = document.getElementById('combo-mph').value;
-  const nonstimChoice = document.getElementById('combo-nonstim').value;
+  const irDose = parseFloat(document.getElementById('combo-mph-ir').value);
+  const laDose = parseFloat(document.getElementById('combo-ritalin-la').value);
+  const mdDose = parseFloat(document.getElementById('combo-methydur').value);
+  const ccDose = parseFloat(document.getElementById('combo-concerta').value);
+  const bupSR = parseFloat(document.getElementById('combo-bup-sr').value);
+  const bupXL = parseFloat(document.getElementById('combo-bup-xl').value);
+  const atomDose = parseFloat(document.getElementById('combo-atom').value);
   const doseTime = 8;
-
-  let mphFn = () => 0;
-  let mphLabel = '';
-  let nonstimFn = () => 0;
-  let nonstimLabel = '';
-
-  switch(mphChoice) {
-    case '1': mphFn = (t) => norm(concertaOROS(t, 36, doseTime), 36); mphLabel = 'Concerta 36mg'; break;
-    case '2': mphFn = (t) => norm(ritalinLA(t, 20, doseTime), 20); mphLabel = 'Ritalin LA 20mg'; break;
-    case '3': mphFn = (t) => norm(methydur(t, 33, doseTime), 33); mphLabel = 'Methydur 33mg'; break;
-    case '4': mphFn = (t) => norm(multiBateman(t, 10, 1.5, 0.26, [doseTime, doseTime+4]), 10); mphLabel = '短效 10mg BID'; break;
-  }
-  switch(nonstimChoice) {
-    case '1': nonstimFn = (t) => norm(bupropionXL(t, 300, doseTime), 300) * 0.6; nonstimLabel = 'Bupropion XL 300mg'; break;
-    case '2': nonstimFn = (t) => norm(atomoxetine(t, 60, doseTime), 60) * 0.5; nonstimLabel = 'Atomoxetine 60mg'; break;
-  }
 
   const datasets = [];
 
-  if (mphChoice !== '0') {
+  // MPH curves
+  if (irDose > 0) {
+    const fn = (t) => norm(multiBateman(t, irDose, 1.5, 0.26, [doseTime, doseTime+4]), 10);
     datasets.push({
-      label: mphLabel + ' 濃度',
-      data: generateTimeSeries(mphFn, 24, 0.1),
+      label: '短效型 ' + irDose + 'mg 濃度',
+      data: generateTimeSeries(fn, 24, 0.1),
+      borderColor: COLORS.mph_ir, backgroundColor: COLORS.mph_ir + '20',
+      borderDash: [5, 3], borderWidth: 1.5, fill: false
+    });
+  }
+  if (laDose > 0) {
+    const fn = (t) => norm(ritalinLA(t, laDose, doseTime), 20);
+    datasets.push({
+      label: 'Ritalin LA ' + laDose + 'mg 濃度',
+      data: generateTimeSeries(fn, 24, 0.1),
+      borderColor: COLORS.ritalin_la, backgroundColor: COLORS.ritalin_la + '20',
+      borderDash: [5, 3], borderWidth: 1.5, fill: false
+    });
+  }
+  if (mdDose > 0) {
+    const fn = (t) => norm(methydur(t, mdDose, doseTime), 33);
+    datasets.push({
+      label: 'Methydur ' + mdDose + 'mg 濃度',
+      data: generateTimeSeries(fn, 24, 0.1),
+      borderColor: COLORS.methydur, backgroundColor: COLORS.methydur + '20',
+      borderDash: [5, 3], borderWidth: 1.5, fill: false
+    });
+  }
+  if (ccDose > 0) {
+    const fn = (t) => norm(concertaOROS(t, ccDose, doseTime), 36);
+    datasets.push({
+      label: 'Concerta ' + ccDose + 'mg 濃度',
+      data: generateTimeSeries(fn, 24, 0.1),
       borderColor: COLORS.concerta, backgroundColor: COLORS.concerta + '20',
       borderDash: [5, 3], borderWidth: 1.5, fill: false
     });
   }
-  if (nonstimChoice !== '0') {
+
+  // Non-stimulant curves
+  if (bupSR > 0) {
+    const fn = (t) => norm(bupropionSR(t, bupSR, doseTime), 150) * 0.6;
     datasets.push({
-      label: nonstimLabel + ' 濃度',
-      data: generateTimeSeries(nonstimFn, 24, 0.1),
+      label: 'Bupropion SR ' + bupSR + 'mg 濃度',
+      data: generateTimeSeries(fn, 24, 0.1),
+      borderColor: COLORS.bup_sr, backgroundColor: COLORS.bup_sr + '20',
+      borderDash: [5, 3], borderWidth: 1.5, fill: false
+    });
+  }
+  if (bupXL > 0) {
+    const fn = (t) => norm(bupropionXL(t, bupXL, doseTime), 300) * 0.6;
+    datasets.push({
+      label: 'Bupropion XL ' + bupXL + 'mg 濃度',
+      data: generateTimeSeries(fn, 24, 0.1),
+      borderColor: COLORS.bup_xl, backgroundColor: COLORS.bup_xl + '20',
+      borderDash: [5, 3], borderWidth: 1.5, fill: false
+    });
+  }
+  if (atomDose > 0) {
+    const fn = (t) => norm(atomoxetine(t, atomDose, doseTime), 60) * 0.5;
+    datasets.push({
+      label: 'Atomoxetine ' + atomDose + 'mg 濃度',
+      data: generateTimeSeries(fn, 24, 0.1),
       borderColor: COLORS.atomoxetine, backgroundColor: COLORS.atomoxetine + '20',
       borderDash: [5, 3], borderWidth: 1.5, fill: false
     });
   }
 
   // Combined attention effect
-  if (mphChoice !== '0' || nonstimChoice !== '0') {
+  const hasAny = irDose > 0 || laDose > 0 || mdDose > 0 || ccDose > 0 || bupSR > 0 || bupXL > 0 || atomDose > 0;
+  if (hasAny) {
     const combinedFn = (t) => {
-      const mph = mphFn(t);
-      const ns = nonstimFn(t);
-      // Attention model: sigmoid-like transform of combined concentration
-      // MPH has stronger acute effect, non-stim provides baseline
-      const total = mph * 1.0 + ns * 0.8;
-      // Apply effect ceiling and threshold
+      let total = 0;
+      if (irDose > 0) total += norm(multiBateman(t, irDose, 1.5, 0.26, [doseTime, doseTime+4]), 10);
+      if (laDose > 0) total += norm(ritalinLA(t, laDose, doseTime), 20);
+      if (mdDose > 0) total += norm(methydur(t, mdDose, doseTime), 33);
+      if (ccDose > 0) total += norm(concertaOROS(t, ccDose, doseTime), 36);
+      if (bupSR > 0) total += norm(bupropionSR(t, bupSR, doseTime), 150) * 0.6;
+      if (bupXL > 0) total += norm(bupropionXL(t, bupXL, doseTime), 300) * 0.6;
+      if (atomDose > 0) total += norm(atomoxetine(t, atomDose, doseTime), 60) * 0.5;
       const effect = 10 * (1 - Math.exp(-0.3 * total));
       return Math.max(0, Math.min(10, effect));
     };
