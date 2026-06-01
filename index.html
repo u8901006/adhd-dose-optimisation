@@ -143,8 +143,9 @@
         <label>Bupropion SR (mg)</label>
         <select id="bup-sr-dose" onchange="updateChart1()">
           <option value="0">不使用</option>
-          <option value="150" selected>150 mg</option>
-          <option value="300">300 mg</option>
+          <option value="150" selected>150 mg (8:00+16:00)</option>
+          <option value="300q">300 mg (8:00)</option>
+          <option value="300b">300 mg (8:00+16:00)</option>
         </select>
       </div>
       <div class="control-group">
@@ -226,8 +227,9 @@
         <label>Bupropion SR (mg)</label>
         <select id="combo-bup-sr" onchange="updateChart2()">
           <option value="0">不使用</option>
-          <option value="150">150 mg</option>
-          <option value="300">300 mg</option>
+          <option value="150">150 mg (8:00+16:00)</option>
+          <option value="300q">300 mg (8:00)</option>
+          <option value="300b">300 mg (8:00+16:00)</option>
         </select>
       </div>
       <div class="control-group">
@@ -342,6 +344,11 @@ function methydur(t, dose, doseTime) {
 // Bupropion SR (taken twice daily)
 function bupropionSR(t, dose, doseTime) {
   return multiBateman(t, dose, 0.45, 0.04, [doseTime, doseTime + 8]);
+}
+
+// Bupropion SR once daily (morning only)
+function bupropionSR_QD(t, dose, doseTime) {
+  return Math.max(0, bateman(t, dose, 0.45, 0.04, doseTime));
 }
 
 // Bupropion XL (once daily, slower absorption)
@@ -498,17 +505,28 @@ function updateChart0() {
 }
 
 function updateChart1() {
-  const srDose = parseFloat(document.getElementById('bup-sr-dose').value);
+  const srVal = document.getElementById('bup-sr-dose').value;
   const xlDose = parseFloat(document.getElementById('bup-xl-dose').value);
   const atomDose = parseFloat(document.getElementById('atom-dose').value);
   const doseTime = 8;
 
+  // Parse SR dosing schedule
+  let srDose = 0, srIsBID = false, srIsQD = false;
+  if (srVal === '150') { srDose = 150; srIsBID = true; }
+  else if (srVal === '300q') { srDose = 300; srIsQD = true; }
+  else if (srVal === '300b') { srDose = 300; srIsBID = true; }
+
   const datasets = [];
 
   if (srDose > 0) {
-    const fn = (t) => norm(bupropionSR(t, srDose, doseTime), 185);
+    const fn = srIsQD
+      ? (t) => norm(bupropionSR_QD(t, srDose, doseTime), 185)
+      : (t) => norm(bupropionSR(t, srDose, doseTime), 185);
+    const label = srIsQD
+      ? 'Bupropion SR ' + srDose + 'mg (8:00)'
+      : 'Bupropion SR ' + srDose + 'mg (8:00+16:00)';
     datasets.push({
-      label: 'Bupropion SR ' + srDose + 'mg (8:00+16:00)',
+      label: label,
       data: generateTimeSeries(fn, 24, 0.1),
       borderColor: COLORS.bup_sr, backgroundColor: COLORS.bup_sr + '20',
       fill: false
@@ -547,10 +565,16 @@ function updateChart2() {
   const laDose = parseFloat(document.getElementById('combo-ritalin-la').value);
   const mdDose = parseFloat(document.getElementById('combo-methydur').value);
   const ccDose = parseFloat(document.getElementById('combo-concerta').value);
-  const bupSR = parseFloat(document.getElementById('combo-bup-sr').value);
+  const bupSRVal = document.getElementById('combo-bup-sr').value;
   const bupXL = parseFloat(document.getElementById('combo-bup-xl').value);
   const atomDose = parseFloat(document.getElementById('combo-atom').value);
   const doseTime = 8;
+
+  // Parse SR dosing schedule
+  let bupSR = 0, srIsQD = false;
+  if (bupSRVal === '150') { bupSR = 150; }
+  else if (bupSRVal === '300q') { bupSR = 300; srIsQD = true; }
+  else if (bupSRVal === '300b') { bupSR = 300; }
 
   const datasets = [];
 
@@ -594,9 +618,14 @@ function updateChart2() {
 
   // Non-stimulant curves
   if (bupSR > 0) {
-    const fn = (t) => norm(bupropionSR(t, bupSR, doseTime), 185) * 0.6;
+    const fn = srIsQD
+      ? (t) => norm(bupropionSR_QD(t, bupSR, doseTime), 185) * 0.6
+      : (t) => norm(bupropionSR(t, bupSR, doseTime), 185) * 0.6;
+    const label = srIsQD
+      ? 'Bupropion SR ' + bupSR + 'mg 濃度 (8:00)'
+      : 'Bupropion SR ' + bupSR + 'mg 濃度 (8:00+16:00)';
     datasets.push({
-      label: 'Bupropion SR ' + bupSR + 'mg 濃度',
+      label: label,
       data: generateTimeSeries(fn, 24, 0.1),
       borderColor: COLORS.bup_sr, backgroundColor: COLORS.bup_sr + '20',
       borderDash: [5, 3], borderWidth: 1.5, fill: false
@@ -630,7 +659,9 @@ function updateChart2() {
       if (laDose > 0) total += norm(ritalinLA(t, laDose, doseTime), 13);
       if (mdDose > 0) total += norm(methydur(t, mdDose, doseTime), 28);
       if (ccDose > 0) total += norm(concertaOROS(t, ccDose, doseTime), 14);
-      if (bupSR > 0) total += norm(bupropionSR(t, bupSR, doseTime), 185) * 0.6;
+      if (bupSR > 0) total += srIsQD
+        ? norm(bupropionSR_QD(t, bupSR, doseTime), 185) * 0.6
+        : norm(bupropionSR(t, bupSR, doseTime), 185) * 0.6;
       if (bupXL > 0) total += norm(bupropionXL(t, bupXL, doseTime), 185) * 0.6;
       if (atomDose > 0) total += norm(atomoxetine(t, atomDose, doseTime), 60) * 0.5;
       const effect = 10 * (1 - Math.exp(-0.3 * total));
