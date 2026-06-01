@@ -110,10 +110,9 @@
         <label>Methydur (mg)</label>
         <select id="methydur-dose" onchange="updateChart0()">
           <option value="0">不使用</option>
-          <option value="10">10 mg</option>
-          <option value="20">20 mg</option>
-          <option value="30" selected>30 mg</option>
-          <option value="40">40 mg</option>
+          <option value="22">22 mg</option>
+          <option value="33" selected>33 mg</option>
+          <option value="44">44 mg</option>
         </select>
       </div>
       <div class="control-group">
@@ -189,7 +188,7 @@
           <option value="0">不使用</option>
           <option value="1" selected>Concerta 36mg</option>
           <option value="2">Ritalin LA 20mg</option>
-          <option value="3">Methydur 30mg</option>
+          <option value="3">Methydur 33mg</option>
           <option value="4">短效 10mg BID</option>
         </select>
       </div>
@@ -505,7 +504,7 @@ function updateChart2() {
   switch(mphChoice) {
     case '1': mphFn = (t) => norm(concertaOROS(t, 36, doseTime), 36); mphLabel = 'Concerta 36mg'; break;
     case '2': mphFn = (t) => norm(ritalinLA(t, 20, doseTime), 20); mphLabel = 'Ritalin LA 20mg'; break;
-    case '3': mphFn = (t) => norm(methydur(t, 30, doseTime), 30); mphLabel = 'Methydur 30mg'; break;
+    case '3': mphFn = (t) => norm(methydur(t, 33, doseTime), 33); mphLabel = 'Methydur 33mg'; break;
     case '4': mphFn = (t) => norm(multiBateman(t, 10, 1.5, 0.26, [doseTime, doseTime+4]), 10); mphLabel = '短效 10mg BID'; break;
   }
   switch(nonstimChoice) {
