@@ -457,7 +457,7 @@ function updateChart0() {
   const datasets = [];
 
   if (irDose > 0) {
-    const fn = (t) => norm(multiBateman(t, irDose, 1.5, 0.26, [doseTime, doseTime + 4]), 15);
+    const fn = (t) => norm(multiBateman(t, irDose, 1.5, 0.26, [doseTime, doseTime + 4]), irDose * 1.5);
     datasets.push({
       label: '短效型 ' + irDose + 'mg (8:00+12:00)',
       data: generateTimeSeries(fn, 24, 0.1),
@@ -466,7 +466,7 @@ function updateChart0() {
     });
   }
   if (laDose > 0) {
-    const fn = (t) => norm(ritalinLA(t, laDose, doseTime), 13);
+    const fn = (t) => norm(ritalinLA(t, laDose, doseTime), laDose * 0.65);
     datasets.push({
       label: 'Ritalin LA ' + laDose + 'mg (8:00)',
       data: generateTimeSeries(fn, 24, 0.1),
@@ -475,7 +475,7 @@ function updateChart0() {
     });
   }
   if (mdDose > 0) {
-    const fn = (t) => norm(methydur(t, mdDose, doseTime), 28);
+    const fn = (t) => norm(methydur(t, mdDose, doseTime), mdDose * 0.8485);
     datasets.push({
       label: 'Methydur ' + mdDose + 'mg (8:00)',
       data: generateTimeSeries(fn, 24, 0.1),
@@ -484,7 +484,7 @@ function updateChart0() {
     });
   }
   if (ccDose > 0) {
-    const fn = (t) => norm(concertaOROS(t, ccDose, doseTime), 14);
+    const fn = (t) => norm(concertaOROS(t, ccDose, doseTime), ccDose * 0.389);
     datasets.push({
       label: 'Concerta ' + ccDose + 'mg (8:00)',
       data: generateTimeSeries(fn, 24, 0.1),
@@ -517,8 +517,8 @@ function updateChart1() {
 
   if (srDose > 0) {
     const fn = srIsQD
-      ? (t) => norm(bupropionSR_QD(t, srDose, doseTime), 185)
-      : (t) => norm(bupropionSR(t, srDose, doseTime), 185);
+      ? (t) => norm(bupropionSR_QD(t, srDose, doseTime), srDose * 1.15)
+      : (t) => norm(bupropionSR(t, srDose, doseTime), srDose * 2.09);
     const label = srIsQD
       ? 'Bupropion SR ' + srDose + 'mg (8:00)'
       : 'Bupropion SR ' + srDose + 'mg (8:00+16:00)';
@@ -530,7 +530,7 @@ function updateChart1() {
     });
   }
   if (xlDose > 0) {
-    const fn = (t) => norm(bupropionXL(t, xlDose, doseTime), 185);
+    const fn = (t) => norm(bupropionXL(t, xlDose, doseTime), xlDose * 1.03);
     datasets.push({
       label: 'Bupropion XL ' + xlDose + 'mg (8:00)',
       data: generateTimeSeries(fn, 24, 0.1),
@@ -539,7 +539,7 @@ function updateChart1() {
     });
   }
   if (atomDose > 0) {
-    const fn = (t) => norm(atomoxetine(t, atomDose, doseTime), 60);
+    const fn = (t) => norm(atomoxetine(t, atomDose, doseTime), atomDose * 1.16);
     datasets.push({
       label: 'Atomoxetine ' + atomDose + 'mg (8:00)',
       data: generateTimeSeries(fn, 24, 0.1),
@@ -576,7 +576,7 @@ function updateChart2() {
 
   // MPH curves
   if (irDose > 0) {
-    const fn = (t) => norm(multiBateman(t, irDose, 1.5, 0.26, [doseTime, doseTime+4]), 15);
+    const fn = (t) => norm(multiBateman(t, irDose, 1.5, 0.26, [doseTime, doseTime+4]), irDose * 1.5);
     datasets.push({
       label: '短效型 ' + irDose + 'mg 濃度',
       data: generateTimeSeries(fn, 24, 0.1),
@@ -585,7 +585,7 @@ function updateChart2() {
     });
   }
   if (laDose > 0) {
-    const fn = (t) => norm(ritalinLA(t, laDose, doseTime), 13);
+    const fn = (t) => norm(ritalinLA(t, laDose, doseTime), laDose * 0.65);
     datasets.push({
       label: 'Ritalin LA ' + laDose + 'mg 濃度',
       data: generateTimeSeries(fn, 24, 0.1),
@@ -594,7 +594,7 @@ function updateChart2() {
     });
   }
   if (mdDose > 0) {
-    const fn = (t) => norm(methydur(t, mdDose, doseTime), 28);
+    const fn = (t) => norm(methydur(t, mdDose, doseTime), mdDose * 0.8485);
     datasets.push({
       label: 'Methydur ' + mdDose + 'mg 濃度',
       data: generateTimeSeries(fn, 24, 0.1),
@@ -603,7 +603,7 @@ function updateChart2() {
     });
   }
   if (ccDose > 0) {
-    const fn = (t) => norm(concertaOROS(t, ccDose, doseTime), 14);
+    const fn = (t) => norm(concertaOROS(t, ccDose, doseTime), ccDose * 0.389);
     datasets.push({
       label: 'Concerta ' + ccDose + 'mg 濃度',
       data: generateTimeSeries(fn, 24, 0.1),
@@ -615,8 +615,8 @@ function updateChart2() {
   // Non-stimulant curves
   if (bupSR > 0) {
     const fn = srIsQD
-      ? (t) => norm(bupropionSR_QD(t, bupSR, doseTime), 185) * 0.6
-      : (t) => norm(bupropionSR(t, bupSR, doseTime), 185) * 0.6;
+      ? (t) => norm(bupropionSR_QD(t, bupSR, doseTime), bupSR * 1.15) * 0.6
+      : (t) => norm(bupropionSR(t, bupSR, doseTime), bupSR * 2.09) * 0.6;
     const label = srIsQD
       ? 'Bupropion SR ' + bupSR + 'mg 濃度 (8:00)'
       : 'Bupropion SR ' + bupSR + 'mg 濃度 (8:00+16:00)';
@@ -628,7 +628,7 @@ function updateChart2() {
     });
   }
   if (bupXL > 0) {
-    const fn = (t) => norm(bupropionXL(t, bupXL, doseTime), 185) * 0.6;
+    const fn = (t) => norm(bupropionXL(t, bupXL, doseTime), bupXL * 1.03) * 0.6;
     datasets.push({
       label: 'Bupropion XL ' + bupXL + 'mg 濃度',
       data: generateTimeSeries(fn, 24, 0.1),
@@ -637,7 +637,7 @@ function updateChart2() {
     });
   }
   if (atomDose > 0) {
-    const fn = (t) => norm(atomoxetine(t, atomDose, doseTime), 60) * 0.5;
+    const fn = (t) => norm(atomoxetine(t, atomDose, doseTime), atomDose * 1.16) * 0.5;
     datasets.push({
       label: 'Atomoxetine ' + atomDose + 'mg 濃度',
       data: generateTimeSeries(fn, 24, 0.1),
@@ -651,15 +651,15 @@ function updateChart2() {
   if (hasAny) {
     const combinedFn = (t) => {
       let total = 0;
-      if (irDose > 0) total += norm(multiBateman(t, irDose, 1.5, 0.26, [doseTime, doseTime+4]), 15);
-      if (laDose > 0) total += norm(ritalinLA(t, laDose, doseTime), 13);
-      if (mdDose > 0) total += norm(methydur(t, mdDose, doseTime), 28);
-      if (ccDose > 0) total += norm(concertaOROS(t, ccDose, doseTime), 14);
+      if (irDose > 0) total += norm(multiBateman(t, irDose, 1.5, 0.26, [doseTime, doseTime+4]), irDose * 1.5);
+      if (laDose > 0) total += norm(ritalinLA(t, laDose, doseTime), laDose * 0.65);
+      if (mdDose > 0) total += norm(methydur(t, mdDose, doseTime), mdDose * 0.8485);
+      if (ccDose > 0) total += norm(concertaOROS(t, ccDose, doseTime), ccDose * 0.389);
       if (bupSR > 0) total += srIsQD
-        ? norm(bupropionSR_QD(t, bupSR, doseTime), 185) * 0.6
-        : norm(bupropionSR(t, bupSR, doseTime), 185) * 0.6;
-      if (bupXL > 0) total += norm(bupropionXL(t, bupXL, doseTime), 185) * 0.6;
-      if (atomDose > 0) total += norm(atomoxetine(t, atomDose, doseTime), 60) * 0.5;
+        ? norm(bupropionSR_QD(t, bupSR, doseTime), bupSR * 1.15) * 0.6
+        : norm(bupropionSR(t, bupSR, doseTime), bupSR * 2.09) * 0.6;
+      if (bupXL > 0) total += norm(bupropionXL(t, bupXL, doseTime), bupXL * 1.03) * 0.6;
+      if (atomDose > 0) total += norm(atomoxetine(t, atomDose, doseTime), atomDose * 1.16) * 0.5;
       const effect = 10 * (1 - Math.exp(-0.3 * total));
       return Math.max(0, Math.min(10, effect));
     };
