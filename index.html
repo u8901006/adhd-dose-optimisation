@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ADHD 藥物濃度視覺化 · 李政洋身心診所衛教工具</title>
+<meta name="description" content="互動式 ADHD 藥物濃度曲線視覺化工具，呈現 Methylphenidate、Bupropion、Atomoxetine 不同劑型隨時間的藥物濃度與專注力變化。"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.1.0/dist/chartjs-plugin-annotation.min.js"></script>
+<style>
+  :root { --bg: #f6f1e8; --surface: #fffaf2; --line: #d8c5ab; --text: #2b2118; --muted: #766453; --accent: #8c4f2b; --accent-soft: #ead2bf; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: radial-gradient(circle at top, #fff6ea 0, var(--bg) 55%, #ead8c6 100%); color: var(--text); font-family: "Noto Sans TC", "PingFang TC", "Helvetica Neue", Arial, sans-serif; min-height: 100vh; line-height: 1.7; }
+  .container { position: relative; z-index: 1; max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+  .logo { font-size: 48px; text-align: center; margin-bottom: 16px; }
+  h1 { text-align: center; font-size: 26px; color: var(--text); margin-bottom: 6px; }
+  .subtitle { text-align: center; color: var(--accent); font-size: 14px; margin-bottom: 10px; }
+  .disclaimer { text-align: center; color: var(--muted); font-size: 12px; margin-bottom: 40px; padding: 0 20px; }
+  h2 { font-size: 18px; color: var(--accent); margin: 40px 0 16px; padding-bottom: 8px; border-bottom: 2px solid var(--accent-soft); }
+  h2 .emoji { margin-right: 6px; }
+
+  /* Tab system */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab-btn { padding: 10px 20px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px 10px 0 0; cursor: pointer; font-size: 14px; color: var(--muted); font-family: inherit; transition: all 0.2s; }
+  .tab-btn:hover { background: var(--accent-soft); }
+  .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .tab-panel { display: none; padding: 24px; background: var(--surface); border: 1px solid var(--line); border-radius: 0 12px 12px 12px; }
+  .tab-panel.active { display: block; }
+
+  /* Chart container */
+  .chart-wrap { position: relative; width: 100%; max-height: 420px; margin-bottom: 20px; }
+  .chart-wrap canvas { width: 100% !important; }
+
+  /* Control panel */
+  .controls { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; align-items: center; }
+  .control-group { display: flex; flex-direction: column; gap: 3px; }
+  .control-group label { font-size: 12px; color: var(--muted); font-weight: 600; }
+  .control-group select, .control-group input[type="range"] { padding: 6px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-size: 13px; font-family: inherit; color: var(--text); min-width: 120px; }
+  .control-group input[type="range"] { padding: 2px 6px; width: 140px; }
+  .dose-display { font-size: 12px; color: var(--accent); font-weight: bold; text-align: center; }
+
+  /* Checkboxes for show/hide */
+  .drug-checks { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+  .drug-check { display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 13px; }
+  .drug-check input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--accent); cursor: pointer; }
+  .color-dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; }
+
+  /* Info box */
+  .info-box { background: var(--accent-soft); border-radius: 10px; padding: 14px 18px; margin-top: 16px; font-size: 13px; color: var(--text); line-height: 1.6; }
+  .info-box strong { color: var(--accent); }
+
+  /* Footer */
+  footer { margin-top: 56px; text-align: center; padding: 24px 0; border-top: 1px solid var(--line); }
+  footer .clinic-links { margin-bottom: 16px; }
+  footer .clinic-links a { display: inline-block; margin: 0 10px; padding: 8px 18px; background: var(--accent); color: #fff; text-decoration: none; border-radius: 20px; font-size: 13px; transition: all 0.2s; }
+  footer .clinic-links a:hover { background: #6b3a1f; transform: translateY(-1px); }
+  footer .support-links { margin-bottom: 16px; }
+  footer .support-links a { display: inline-block; margin: 0 8px; color: var(--muted); text-decoration: none; font-size: 13px; }
+  footer .support-links a:hover { color: var(--accent); }
+  footer p { font-size: 12px; color: var(--muted); margin-top: 12px; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .container { padding: 20px 12px; }
+    h1 { font-size: 20px; }
+    .controls { gap: 8px; }
+    .control-group select { min-width: 100px; }
+    .tab-btn { padding: 8px 12px; font-size: 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="logo">💊</div>
+  <h1>ADHD 藥物濃度視覺化</h1>
+  <p class="subtitle">互動式衛教工具 · 呈現不同藥物劑型隨時間的濃度與專注力變化</p>
+  <p class="disclaimer">⚠️ 本工具僅供衛教參考，實際藥物反應因個體差異而異。藥物調整請諮詢您的醫師。</p>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab(0)">📊 Methylphenidate</button>
+    <button class="tab-btn" onclick="switchTab(1)">📊 Bupropion / Atomoxetine</button>
+    <button class="tab-btn" onclick="switchTab(2)">🧠 合併專注力效果</button>
+  </div>
+
+  <!-- Panel 1: Methylphenidate -->
+  <div class="tab-panel active" id="panel-0">
+    <div class="controls">
+      <div class="control-group">
+        <label>短效型劑量 (mg)</label>
+        <select id="mph-ir-dose" onchange="updateChart0()">
+          <option value="0">不使用</option>
+          <option value="5">5 mg</option>
+          <option value="10" selected>10 mg</option>
+          <option value="15">15 mg</option>
+          <option value="20">20 mg</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Ritalin LA (mg)</label>
+        <select id="ritalin-la-dose" onchange="updateChart0()">
+          <option value="0">不使用</option>
+          <option value="10">10 mg</option>
+          <option value="20" selected>20 mg</option>
+          <option value="30">30 mg</option>
+          <option value="40">40 mg</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Methydur (mg)</label>
+        <select id="methydur-dose" onchange="updateChart0()">
+          <option value="0">不使用</option>
+          <option value="10">10 mg</option>
+          <option value="20">20 mg</option>
+          <option value="30" selected>30 mg</option>
+          <option value="40">40 mg</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Concerta (mg)</label>
+        <select id="concerta-dose" onchange="updateChart0()">
+          <option value="0">不使用</option>
+          <option value="18">18 mg</option>
+          <option value="27">27 mg</option>
+          <option value="36" selected>36 mg</option>
+          <option value="54">54 mg</option>
+        </select>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="chart0"></canvas></div>
+    <div class="info-box">
+      <strong>📖 Methylphenidate 各劑型特點：</strong><br>
+      <strong>短效型（IR）</strong>：服藥後 1-2 小時達峰，持續 3-4 小時，常需每日多次服藥。<br>
+      <strong>Ritalin LA</strong>：雙相釋放（50%立即 + 50%延遲4小時），模擬一天兩次 IR 的效果。<br>
+      <strong>Methydur</strong>：緩釋劑型，約 4 小時達峰，持續 8-10 小時。<br>
+      <strong>Concerta（OROS）</strong>：三相滲透壓釋放（22%立即 + 78%漸進），平滑曲線持續 10-12 小時。
+    </div>
+  </div>
+
+  <!-- Panel 2: Bupropion / Atomoxetine -->
+  <div class="tab-panel" id="panel-1">
+    <div class="controls">
+      <div class="control-group">
+        <label>Bupropion SR (mg)</label>
+        <select id="bup-sr-dose" onchange="updateChart1()">
+          <option value="0">不使用</option>
+          <option value="100">100 mg</option>
+          <option value="150" selected>150 mg</option>
+          <option value="200">200 mg</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Bupropion XL (mg)</label>
+        <select id="bup-xl-dose" onchange="updateChart1()">
+          <option value="0">不使用</option>
+          <option value="150">150 mg</option>
+          <option value="300" selected>300 mg</option>
+          <option value="450">450 mg</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Atomoxetine (mg)</label>
+        <select id="atom-dose" onchange="updateChart1()">
+          <option value="0">不使用</option>
+          <option value="18">18 mg</option>
+          <option value="25">25 mg</option>
+          <option value="40" selected>40 mg</option>
+          <option value="60">60 mg</option>
+          <option value="80">80 mg</option>
+          <option value="100">100 mg</option>
+        </select>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="chart1"></canvas></div>
+    <div class="info-box">
+      <strong>📖 非 CNS 刺激劑特點：</strong><br>
+      <strong>Bupropion SR</strong>：NDRI（正腎上腺素-多巴胺回收抑制劑），緩釋型每日兩次，Tmax 約 3 小時，半衰期 14-21 小時。常用於合併憂鬱或物質使用的 ADHD 患者。<br>
+      <strong>Bupropion XL</strong>：持續釋放型每日一次，Tmax 約 5 小時，提供更平穩的全天血中濃度。<br>
+      <strong>Atomoxetine（Strattera）</strong>：選擇性正腎上腺素回收抑制劑（NRI），Tmax 1-2 小時，半衰期 5-22 小時（CYP2D6 代謝），需規律每日服藥，約 4-6 週達到完整療效。
+    </div>
+  </div>
+
+  <!-- Panel 3: Combined Attention Effect -->
+  <div class="tab-panel" id="panel-2">
+    <div class="controls">
+      <div class="control-group">
+        <label>Methylphenidate 劑型</label>
+        <select id="combo-mph" onchange="updateChart2()">
+          <option value="0">不使用</option>
+          <option value="1" selected>Concerta 36mg</option>
+          <option value="2">Ritalin LA 20mg</option>
+          <option value="3">Methydur 30mg</option>
+          <option value="4">短效 10mg BID</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>非刺激劑</label>
+        <select id="combo-nonstim" onchange="updateChart2()">
+          <option value="0">不使用</option>
+          <option value="1" selected>Bupropion XL 300mg</option>
+          <option value="2">Atomoxetine 60mg</option>
+        </select>
+      </div>
+    </div>
+    <div class="chart-wrap"><canvas id="chart2"></canvas></div>
+    <div class="info-box">
+      <strong>📖 合併治療的專注力效果：</strong><br>
+      此圖模擬合併使用 CNS 刺激劑與非刺激劑時，預估的「專注力效果」隨時間變化。<br>
+      <strong>注意</strong>：專注力效果 ≠ 血中濃度。臨床效果受到藥效學、耐受性、個體差異等多重因素影響。Bupropion/Atomoxetine 的效果通常需要數週才能完整顯現，本圖僅呈現單次劑量的急性效果預估。<br>
+      <strong>治療原則</strong>：CNS 刺激劑提供快速的專注力提升，非刺激劑則提供穩定的基線效果，兩者合併可互補長短。
+    </div>
+  </div>
+
+  <footer>
+    <div class="clinic-links">
+      <a href="https://www.leepsyclinic.com/" target="_blank">🏥 李政洋身心診所</a>
+      <a href="https://blog.leepsyclinic.com/" target="_blank">📧 訂閱電子報</a>
+      <a href="https://buymeacoffee.com/CYlee" target="_blank">☕ Buy Me a Coffee</a>
+    </div>
+    <p>本工具僅供衛教用途，不能取代專業醫療建議。藥物動力學模型為簡化近似值。</p>
+    <p style="margin-top:8px;"><a href="https://github.com/u8901006/adhd-dose-optimisation" style="color:var(--muted);text-decoration:none;" target="_blank">GitHub</a></p>
+  </footer>
+</div>
+
+<script>
+// ===== PHARMACOKINETIC MODELS =====
+
+// Bateman one-compartment model: single dose at time doseTime
+function bateman(t, dose, ka, ke, doseTime) {
+  const dt = t - doseTime;
+  if (dt <= 0) return 0;
+  const C = dose * ka / (ka - ke) * (Math.exp(-ke * dt) - Math.exp(-ka * dt));
+  return Math.max(0, C);
+}
+
+// Multi-dose accumulation
+function multiBateman(t, dose, ka, ke, doseTimes) {
+  let total = 0;
+  for (const dt of doseTimes) {
+    total += bateman(t, dose, ka, ke, dt);
+  }
+  return total;
+}
+
+// Concerta OROS triphasic model (22% IR + 28% at 2h + 50% gradual over 8h)
+function concertaOROS(t, totalDose, doseTime) {
+  const dt = t - doseTime;
+  if (dt <= 0) return 0;
+  // Phase 1: 22% immediate (fast IR)
+  const d1 = totalDose * 0.22;
+  const c1 = bateman(t, d1, 1.8, 0.23, doseTime);
+  // Phase 2: 28% delayed release at ~2h
+  const d2 = totalDose * 0.28;
+  const c2 = bateman(t, d2, 0.8, 0.23, doseTime + 2);
+  // Phase 3: 50% gradual zero-order infusion over 6-8h
+  const d3 = totalDose * 0.50;
+  const infusionStart = doseTime + 1;
+  const infusionEnd = doseTime + 8;
+  let c3 = 0;
+  if (dt > infusionStart) {
+    const infusionRate = d3 / (infusionEnd - infusionStart);
+    const infDuration = Math.min(dt - infusionStart, infusionEnd - infusionStart);
+    // Approximate: sum of many tiny IR doses during infusion
+    const steps = 40;
+    for (let i = 0; i < steps; i++) {
+      const microTime = infusionStart + (infDuration * i / steps);
+      const microDose = infusionRate * (infDuration / steps);
+      c3 += bateman(t, microDose, 0.4, 0.23, microTime);
+    }
+  }
+  return Math.max(0, c1 + c2 + c3);
+}
+
+// Ritalin LA bimodal (50% IR + 50% delayed 4h)
+function ritalinLA(t, dose, doseTime) {
+  const dt = t - doseTime;
+  if (dt <= 0) return 0;
+  const d1 = dose * 0.50;
+  const c1 = bateman(t, d1, 1.5, 0.26, doseTime);
+  const d2 = dose * 0.50;
+  const c2 = bateman(t, d2, 1.5, 0.26, doseTime + 4);
+  return Math.max(0, c1 + c2);
+}
+
+// Methydur slow release
+function methydur(t, dose, doseTime) {
+  const dt = t - doseTime;
+  if (dt <= 0) return 0;
+  return Math.max(0, bateman(t, dose, 0.6, 0.20, doseTime));
+}
+
+// Bupropion SR (taken twice daily)
+function bupropionSR(t, dose, doseTime) {
+  return multiBateman(t, dose, 0.45, 0.04, [doseTime, doseTime + 8]);
+}
+
+// Bupropion XL (once daily, slower absorption)
+function bupropionXL(t, dose, doseTime) {
+  return Math.max(0, bateman(t, dose, 0.25, 0.04, doseTime));
+}
+
+// Atomoxetine
+function atomoxetine(t, dose, doseTime) {
+  return Math.max(0, bateman(t, dose, 1.2, 0.10, doseTime));
+}
+
+// Perceived attention effect kernel (biexponential band-pass)
+function attentionKernel(concentration, k_on, k_off) {
+  // Simple: scale and smooth the concentration
+  return concentration * k_on / (k_on + k_off);
+}
+
+// Generate time series data
+function generateTimeSeries(fn, hours, step) {
+  const data = [];
+  for (let t = 0; t <= hours; t += step) {
+    data.push({ x: t, y: fn(t) });
+  }
+  return data;
+}
+
+// ===== CHARTS =====
+const COLORS = {
+  mph_ir: '#c0392b',
+  ritalin_la: '#2980b9',
+  methydur: '#27ae60',
+  concerta: '#8e44ad',
+  bup_sr: '#d35400',
+  bup_xl: '#e67e22',
+  atomoxetine: '#16a085',
+  attention: '#8c4f2b',
+  attention_baseline: '#bdc3c7',
+};
+
+let chart0, chart1, chart2;
+
+function createChart(canvasId, datasets, yLabel, xMax) {
+  const ctx = document.getElementById(canvasId).getContext('2d');
+  return new Chart(ctx, {
+    type: 'line',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          position: 'top',
+          labels: { font: { size: 12, family: '"Noto Sans TC", sans-serif' }, usePointStyle: true, padding: 16 }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(44,33,24,0.9)',
+          titleFont: { family: '"Noto Sans TC", sans-serif' },
+          bodyFont: { family: '"Noto Sans TC", sans-serif' },
+          callbacks: {
+            title: function(items) {
+              const h = items[0].parsed.x;
+              const hr = Math.floor(h);
+              const min = Math.round((h - hr) * 60);
+              return hr + ':' + (min < 10 ? '0' : '') + min;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          title: { display: true, text: '時間（服藥後小時）', font: { size: 12, family: '"Noto Sans TC", sans-serif' } },
+          min: 0, max: xMax || 24,
+          ticks: { stepSize: 2, callback: function(v) { return v + 'h'; } }
+        },
+        y: {
+          title: { display: true, text: yLabel, font: { size: 12, family: '"Noto Sans TC", sans-serif' } },
+          min: 0,
+          ticks: { callback: function(v) { return v.toFixed(1); } }
+        }
+      },
+      elements: {
+        point: { radius: 0, hoverRadius: 4 },
+        line: { borderWidth: 2.5, tension: 0.4 }
+      },
+      animation: { duration: 500 }
+    }
+  });
+}
+
+// Normalize dose for display (relative units)
+function norm(val, refDose) {
+  // Scale to make a "standard" dose peak around 5-10 on y-axis
+  return val * 8 / Math.max(refDose, 1);
+}
+
+// ===== UPDATE FUNCTIONS =====
+
+function updateChart0() {
+  const irDose = parseFloat(document.getElementById('mph-ir-dose').value);
+  const laDose = parseFloat(document.getElementById('ritalin-la-dose').value);
+  const mdDose = parseFloat(document.getElementById('methydur-dose').value);
+  const ccDose = parseFloat(document.getElementById('concerta-dose').value);
+  const doseTime = 8; // 8am
+
+  const datasets = [];
+
+  if (irDose > 0) {
+    const fn = (t) => norm(multiBateman(t, irDose, 1.5, 0.26, [doseTime, doseTime + 4]), 10);
+    datasets.push({
+      label: '短效型 ' + irDose + 'mg (8:00+12:00)',
+      data: generateTimeSeries(fn, 24, 0.1),
+      borderColor: COLORS.mph_ir, backgroundColor: COLORS.mph_ir + '20',
+      fill: false
+    });
+  }
+  if (laDose > 0) {
+    const fn = (t) => norm(ritalinLA(t, laDose, doseTime), 20);
+    datasets.push({
+      label: 'Ritalin LA ' + laDose + 'mg (8:00)',
+      data: generateTimeSeries(fn, 24, 0.1),
+      borderColor: COLORS.ritalin_la, backgroundColor: COLORS.ritalin_la + '20',
+      fill: false
+    });
+  }
+  if (mdDose > 0) {
+    const fn = (t) => norm(methydur(t, mdDose, doseTime), 30);
+    datasets.push({
+      label: 'Methydur ' + mdDose + 'mg (8:00)',
+      data: generateTimeSeries(fn, 24, 0.1),
+      borderColor: COLORS.methydur, backgroundColor: COLORS.methydur + '20',
+      fill: false
+    });
+  }
+  if (ccDose > 0) {
+    const fn = (t) => norm(concertaOROS(t, ccDose, doseTime), 36);
+    datasets.push({
+      label: 'Concerta ' + ccDose + 'mg (8:00)',
+      data: generateTimeSeries(fn, 24, 0.1),
+      borderColor: COLORS.concerta, backgroundColor: COLORS.concerta + '20',
+      fill: false
+    });
+  }
+
+  if (datasets.length === 0) {
+    datasets.push({ label: '請選擇至少一種藥物', data: [{x:0,y:0}], borderColor: '#ccc' });
+  }
+
+  chart0.data.datasets = datasets;
+  chart0.options.scales.y.title.text = '相對藥物濃度（正規化）';
+  chart0.update();
+}
+
+function updateChart1() {
+  const srDose = parseFloat(document.getElementById('bup-sr-dose').value);
+  const xlDose = parseFloat(document.getElementById('bup-xl-dose').value);
+  const atomDose = parseFloat(document.getElementById('atom-dose').value);
+  const doseTime = 8;
+
+  const datasets = [];
+
+  if (srDose > 0) {
+    const fn = (t) => norm(bupropionSR(t, srDose, doseTime), 150);
+    datasets.push({
+      label: 'Bupropion SR ' + srDose + 'mg (8:00+16:00)',
+      data: generateTimeSeries(fn, 24, 0.1),
+      borderColor: COLORS.bup_sr, backgroundColor: COLORS.bup_sr + '20',
+      fill: false
+    });
+  }
+  if (xlDose > 0) {
+    const fn = (t) => norm(bupropionXL(t, xlDose, doseTime), 300);
+    datasets.push({
+      label: 'Bupropion XL ' + xlDose + 'mg (8:00)',
+      data: generateTimeSeries(fn, 24, 0.1),
+      borderColor: COLORS.bup_xl, backgroundColor: COLORS.bup_xl + '20',
+      fill: false
+    });
+  }
+  if (atomDose > 0) {
+    const fn = (t) => norm(atomoxetine(t, atomDose, doseTime), 60);
+    datasets.push({
+      label: 'Atomoxetine ' + atomDose + 'mg (8:00)',
+      data: generateTimeSeries(fn, 24, 0.1),
+      borderColor: COLORS.atomoxetine, backgroundColor: COLORS.atomoxetine + '20',
+      fill: false
+    });
+  }
+
+  if (datasets.length === 0) {
+    datasets.push({ label: '請選擇至少一種藥物', data: [{x:0,y:0}], borderColor: '#ccc' });
+  }
+
+  chart1.data.datasets = datasets;
+  chart1.options.scales.y.title.text = '相對藥物濃度（正規化）';
+  chart1.update();
+}
+
+function updateChart2() {
+  const mphChoice = document.getElementById('combo-mph').value;
+  const nonstimChoice = document.getElementById('combo-nonstim').value;
+  const doseTime = 8;
+
+  let mphFn = () => 0;
+  let mphLabel = '';
+  let nonstimFn = () => 0;
+  let nonstimLabel = '';
+
+  switch(mphChoice) {
+    case '1': mphFn = (t) => norm(concertaOROS(t, 36, doseTime), 36); mphLabel = 'Concerta 36mg'; break;
+    case '2': mphFn = (t) => norm(ritalinLA(t, 20, doseTime), 20); mphLabel = 'Ritalin LA 20mg'; break;
+    case '3': mphFn = (t) => norm(methydur(t, 30, doseTime), 30); mphLabel = 'Methydur 30mg'; break;
+    case '4': mphFn = (t) => norm(multiBateman(t, 10, 1.5, 0.26, [doseTime, doseTime+4]), 10); mphLabel = '短效 10mg BID'; break;
+  }
+  switch(nonstimChoice) {
+    case '1': nonstimFn = (t) => norm(bupropionXL(t, 300, doseTime), 300) * 0.6; nonstimLabel = 'Bupropion XL 300mg'; break;
+    case '2': nonstimFn = (t) => norm(atomoxetine(t, 60, doseTime), 60) * 0.5; nonstimLabel = 'Atomoxetine 60mg'; break;
+  }
+
+  const datasets = [];
+
+  if (mphChoice !== '0') {
+    datasets.push({
+      label: mphLabel + ' 濃度',
+      data: generateTimeSeries(mphFn, 24, 0.1),
+      borderColor: COLORS.concerta, backgroundColor: COLORS.concerta + '20',
+      borderDash: [5, 3], borderWidth: 1.5, fill: false
+    });
+  }
+  if (nonstimChoice !== '0') {
+    datasets.push({
+      label: nonstimLabel + ' 濃度',
+      data: generateTimeSeries(nonstimFn, 24, 0.1),
+      borderColor: COLORS.atomoxetine, backgroundColor: COLORS.atomoxetine + '20',
+      borderDash: [5, 3], borderWidth: 1.5, fill: false
+    });
+  }
+
+  // Combined attention effect
+  if (mphChoice !== '0' || nonstimChoice !== '0') {
+    const combinedFn = (t) => {
+      const mph = mphFn(t);
+      const ns = nonstimFn(t);
+      // Attention model: sigmoid-like transform of combined concentration
+      // MPH has stronger acute effect, non-stim provides baseline
+      const total = mph * 1.0 + ns * 0.8;
+      // Apply effect ceiling and threshold
+      const effect = 10 * (1 - Math.exp(-0.3 * total));
+      return Math.max(0, Math.min(10, effect));
+    };
+    datasets.push({
+      label: '預估專注力效果',
+      data: generateTimeSeries(combinedFn, 24, 0.1),
+      borderColor: COLORS.attention, backgroundColor: COLORS.attention + '15',
+      borderWidth: 3, fill: true
+    });
+  }
+
+  if (datasets.length === 0) {
+    datasets.push({ label: '請選擇至少一種藥物', data: [{x:0,y:0}], borderColor: '#ccc' });
+  }
+
+  chart2.data.datasets = datasets;
+  chart2.options.scales.y.title.text = '專注力效果（0-10分）';
+  chart2.options.scales.y.max = 10;
+  chart2.update();
+}
+
+// ===== TAB SWITCHING =====
+function switchTab(idx) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+  document.querySelectorAll('.tab-panel').forEach((p, i) => p.classList.toggle('active', i === idx));
+}
+
+// ===== INIT =====
+function init() {
+  chart0 = createChart('chart0', [], '相對藥物濃度（正規化）', 24);
+  chart1 = createChart('chart1', [], '相對藥物濃度（正規化）', 24);
+  chart2 = createChart('chart2', [], '專注力效果（0-10分）', 24);
+  chart2.options.scales.y.max = 10;
+
+  updateChart0();
+  updateChart1();
+  updateChart2();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
