@@ -143,9 +143,8 @@
         <label>Bupropion SR (mg)</label>
         <select id="bup-sr-dose" onchange="updateChart1()">
           <option value="0">不使用</option>
-          <option value="100">100 mg</option>
           <option value="150" selected>150 mg</option>
-          <option value="200">200 mg</option>
+          <option value="300">300 mg</option>
         </select>
       </div>
       <div class="control-group">
@@ -227,9 +226,8 @@
         <label>Bupropion SR (mg)</label>
         <select id="combo-bup-sr" onchange="updateChart2()">
           <option value="0">不使用</option>
-          <option value="100">100 mg</option>
           <option value="150">150 mg</option>
-          <option value="200">200 mg</option>
+          <option value="300">300 mg</option>
         </select>
       </div>
       <div class="control-group">
@@ -508,7 +506,7 @@ function updateChart1() {
   const datasets = [];
 
   if (srDose > 0) {
-    const fn = (t) => norm(bupropionSR(t, srDose, doseTime), 150);
+    const fn = (t) => norm(bupropionSR(t, srDose, doseTime), 185);
     datasets.push({
       label: 'Bupropion SR ' + srDose + 'mg (8:00+16:00)',
       data: generateTimeSeries(fn, 24, 0.1),
@@ -517,7 +515,7 @@ function updateChart1() {
     });
   }
   if (xlDose > 0) {
-    const fn = (t) => norm(bupropionXL(t, xlDose, doseTime), 300);
+    const fn = (t) => norm(bupropionXL(t, xlDose, doseTime), 185);
     datasets.push({
       label: 'Bupropion XL ' + xlDose + 'mg (8:00)',
       data: generateTimeSeries(fn, 24, 0.1),
@@ -596,7 +594,7 @@ function updateChart2() {
 
   // Non-stimulant curves
   if (bupSR > 0) {
-    const fn = (t) => norm(bupropionSR(t, bupSR, doseTime), 150) * 0.6;
+    const fn = (t) => norm(bupropionSR(t, bupSR, doseTime), 185) * 0.6;
     datasets.push({
       label: 'Bupropion SR ' + bupSR + 'mg 濃度',
       data: generateTimeSeries(fn, 24, 0.1),
@@ -605,7 +603,7 @@ function updateChart2() {
     });
   }
   if (bupXL > 0) {
-    const fn = (t) => norm(bupropionXL(t, bupXL, doseTime), 300) * 0.6;
+    const fn = (t) => norm(bupropionXL(t, bupXL, doseTime), 185) * 0.6;
     datasets.push({
       label: 'Bupropion XL ' + bupXL + 'mg 濃度',
       data: generateTimeSeries(fn, 24, 0.1),
@@ -632,8 +630,8 @@ function updateChart2() {
       if (laDose > 0) total += norm(ritalinLA(t, laDose, doseTime), 13);
       if (mdDose > 0) total += norm(methydur(t, mdDose, doseTime), 28);
       if (ccDose > 0) total += norm(concertaOROS(t, ccDose, doseTime), 14);
-      if (bupSR > 0) total += norm(bupropionSR(t, bupSR, doseTime), 150) * 0.6;
-      if (bupXL > 0) total += norm(bupropionXL(t, bupXL, doseTime), 300) * 0.6;
+      if (bupSR > 0) total += norm(bupropionSR(t, bupSR, doseTime), 185) * 0.6;
+      if (bupXL > 0) total += norm(bupropionXL(t, bupXL, doseTime), 185) * 0.6;
       if (atomDose > 0) total += norm(atomoxetine(t, atomDose, doseTime), 60) * 0.5;
       const effect = 10 * (1 - Math.exp(-0.3 * total));
       return Math.max(0, Math.min(10, effect));
